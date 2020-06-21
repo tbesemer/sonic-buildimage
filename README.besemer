@@ -1,0 +1,6 @@
+Baseline Branch Creation.
+
+This was pulled from sonic upstream, and then the branch 201911 was
+checkout out, and branched to 201911_logging.  This README.besemer
+is the only file added during branching.
+
