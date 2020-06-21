@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#  Quote everything so strings with special characters
+#  passed to real wget are preserved.
+#
+C="wget.bin "
+for i in "$@"
+do
+    i=\"$i\"
+    C="$C $i"
+done
+
+#  There are two key loging operations:
+#
+#   1. During generation of Docker container.  We log everything
+#      in </sonic_logs> during creation.
+#   2. During builds from within the Docker container.  In this
+#      case, the CWD is mounted on /sonic in the container, so
+#      we log into that directory.
+#
+if [ ! -d /sonic ]
+then
+    WGET_LOG=/sonic_logs/db_wget_log.txt
+else
+    WGET_LOG=/sonic/rt_wget_log.txt
+fi
+
+# Log the operation and then invoke it.
+#
+echo "$@" >> $WGET_LOG
+bash -c "$C"

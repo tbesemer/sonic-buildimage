@@ -8,6 +8,20 @@ FROM debian:stretch
 
 MAINTAINER gulv@microsoft.com
 
+{% if LOG_EXTERNAL_REFS == "yes" %}
+##  We have the option of logging all pip operations
+##  during builds by installing the correct /etc/pip.conf.
+##  
+##  Additionally, when not logging, we can install
+##  a /etc/pip.conf file that references an internal
+##  mirror.
+##
+RUN mkdir /sonic_logs
+COPY logging_extensions/docker/etc/pip.conf.log_docker /etc/pip.conf
+{% elif PIP_INTERNAL_MIRROR == "yes" %}
+COPY logging_extensions/docker/etc/pip.conf /etc/pip.conf
+{% endif %}
+
 COPY ["no-check-valid-until", "/etc/apt/apt.conf.d/"]
 
 RUN echo "deb [arch=amd64] http://debian-archive.trafficmanager.net/debian/ stretch main contrib non-free" >> /etc/apt/sources.list && \
@@ -302,6 +316,18 @@ RUN apt-get update && apt-get install -y \
         libexplain-dev \
         libevent-dev
 
+
+{% if LOG_EXTERNAL_REFS == "yes" %}
+## Save off original get/wget, install wrapper
+## for logging.
+##
+RUN cp /usr/bin/git /usr/bin/git.bin
+COPY logging_extensions/docker/usr/bin/git /usr/bin/git
+
+RUN cp /usr/bin/wget /usr/bin/wget.bin
+COPY logging_extensions/docker/usr/bin/wget /usr/bin/wget
+{% endif %}
+
 ## Config dpkg
 ## install the configuration file if it’s currently missing
 RUN sudo augtool --autosave "set /files/etc/dpkg/dpkg.cfg/force-confmiss"
@@ -430,3 +456,18 @@ RUN apt-get install -y docker-ce=5:18.09.5~3-0~debian-stretch docker-ce-cli=5:18
 RUN apt-get install -y docker-ce=18.06.3~ce~3-0~debian docker-ce-cli=18.06.3~ce~3-0~debian
 {%- endif %}
 RUN echo "DOCKER_OPTS=\"--experimental --storage-driver=vfs\"" >> /etc/default/docker
+
+{% if LOG_EXTERNAL_REFS == "yes" %}
+##  We are done with Container build, update /etc/pip.conf.
+##
+##  If configured, we have the option of logging all pip operations
+##  during builds by installing the correct /etc/pip.conf.
+##  
+##  Additionally, when not logging, we can install
+##  a /etc/pip.conf file that references an internal
+##  mirror.
+##
+COPY logging_extensions/docker/etc/pip.conf.log_runtime /etc/pip.conf
+{% elif PIP_INTERNAL_MIRROR == "yes" %}
+COPY logging_extensions/docker/etc/pip.conf /etc/pip.conf
+{% endif %}
