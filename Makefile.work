@@ -87,16 +87,55 @@ ifeq ($(PIP_INTERNAL_MIRROR),)
 PIP_INTERNAL_MIRROR=no
 endif
 
+# Producer/Consumer vs Development Model.
+#
+# We have three modes of operation (SONIC_BUILD_OPERATION):
+#  1. Default (sonic_build_original):  No change, used
+#     for generating logs.
+#  2. Producer (sonic_build_producer):  Used to generate
+#     an image that is stored for long term reuse.
+#  3. Consumer (sonic_build_consumer):  Used to simply consume
+#     the the image built in Step 2.  This is the default setting.
+#
+# Typically, the desired operation is set on the command line
+# when invoking 'make'.
+#
+ifeq ($(SONIC_BUILD_OPERATION),)
+SONIC_BUILD_OPERATION=sonic_build_original
+endif
+
 
 ifeq ($(BLDENV), stretch)
 SLAVE_DIR = sonic-slave-stretch
 else
 SLAVE_DIR = sonic-slave-jessie
 endif
+
+# Default, unmodifed SONIC-2 Build.  Typically used for
+# generating logs. Else, we use producer/consumer model,
+# with a well-defined tag.
+#
+ifeq ($(SONIC_BUILD_OPERATION),sonic_build_original)
 SLAVE_BASE_TAG = $(shell PIP_INTERNAL_MIRROR=$(PIP_INTERNAL_MIRROR) LOG_EXTERNAL_REFS=$(LOG_EXTERNAL_REFS) CONFIGURED_ARCH=$(CONFIGURED_ARCH) j2 $(SLAVE_DIR)/Dockerfile.j2 > $(SLAVE_DIR)/Dockerfile && sha1sum $(SLAVE_DIR)/Dockerfile | awk '{print substr($$1,0,11);}')
 SLAVE_TAG = $(shell cat $(SLAVE_DIR)/Dockerfile.user $(SLAVE_DIR)/Dockerfile | sha1sum | awk '{print substr($$1,0,11);}')
 SLAVE_BASE_IMAGE = $(SLAVE_DIR)
 SLAVE_IMAGE = $(SLAVE_BASE_IMAGE)-$(USER)
+endif
+
+ifeq ($(SONIC_BUILD_OPERATION),sonic_build_consumer)
+# Consumer - Pathing may change based on storage.
+SLAVE_BASE_TAG = 201911
+SLAVE_TAG=201911
+SLAVE_BASE_IMAGE = $(SLAVE_DIR)
+SLAVE_IMAGE = $(SLAVE_BASE_IMAGE)-$(USER)
+else
+# Producer - use well known tag names.
+SLAVE_BASE_TAG = 201911
+SLAVE_TAG=201911
+SLAVE_BASE_IMAGE = $(SLAVE_DIR)
+SLAVE_IMAGE = tbesemer/$(SLAVE_BASE_IMAGE)-$(USER)
+endif
+
 
 OVERLAY_MODULE_CHECK := \
     lsmod | grep -q "^overlay " &>/dev/null || \
@@ -155,11 +194,37 @@ ifneq (,$(filter $(CONFIGURED_ARCH), armhf arm64))
 
 endif
 
+# Default, unmodifed SONIC-2 Build.  Typically used for
+# generating logs. Else, we use producer/consumer model,
+# with a well-defined tag.
+#
+ifeq ($(SONIC_BUILD_OPERATION),sonic_build_original)
 DOCKER_BASE_BUILD = docker build --no-cache \
 		    -t $(SLAVE_BASE_IMAGE):$(SLAVE_BASE_TAG) \
 		    --build-arg http_proxy=$(http_proxy) \
 		    --build-arg https_proxy=$(https_proxy) \
 		    $(SLAVE_DIR)
+endif
+
+ifeq ($(SONIC_BUILD_OPERATION),sonic_build_producer)
+DOCKER_BASE_BUILD = docker build --no-cache \
+		    -t $(SLAVE_BASE_IMAGE):$(SLAVE_BASE_TAG) \
+		    --build-arg http_proxy=$(http_proxy) \
+		    --build-arg https_proxy=$(https_proxy) \
+		    $(SLAVE_DIR)
+# FIXME
+# Push to the proper storage, based on SLAVE_BASE_TAG.
+#
+endif
+
+
+# Consumer, pull from storage, make sure the image is tagged properly.
+#
+ifeq ($(SONIC_BUILD_OPERATION),sonic_build_consumer)
+DOCKER_BASE_BUILD = docker pull tbesemer/$(SLAVE_BASE_IMAGE):$(SLAVE_BASE_TAG); \
+docker tag tbesemer/$(SLAVE_BASE_IMAGE):$(SLAVE_BASE_TAG) $(SLAVE_BASE_IMAGE):$(SLAVE_BASE_TAG)
+endif
+
 
 DOCKER_BUILD = docker build --no-cache \
 	       --build-arg user=$(USER) \
