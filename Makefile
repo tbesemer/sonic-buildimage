@@ -15,7 +15,7 @@ ifeq ($(NOJESSIE), 0)
 	make -f Makefile.work jessie
 endif
 
-clean reset init configure showtag sonic-slave-build sonic-slave-bash :
+clean reset init configure showtag sonic-slave-build sonic-slave-bash showbuildop :
 	@echo "+++ Making $@ +++"
 ifeq ($(NOJESSIE), 0)
 	make -f Makefile.work $@

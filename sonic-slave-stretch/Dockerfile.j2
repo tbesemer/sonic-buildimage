@@ -326,6 +326,13 @@ COPY logging_extensions/docker/usr/bin/git /usr/bin/git
 
 RUN cp /usr/bin/wget /usr/bin/wget.bin
 COPY logging_extensions/docker/usr/bin/wget /usr/bin/wget
+{% else %}
+#  In this case, we install the wrappers, as they might get
+#  used during day to day builds.  We don't want them
+#  defaulted on.
+#
+COPY logging_extensions/docker/usr/bin/git /usr/bin/git.logging
+COPY logging_extensions/docker/usr/bin/wget /usr/bin/wget.logging
 {% endif %}
 
 ## Config dpkg
@@ -467,7 +474,13 @@ RUN echo "DOCKER_OPTS=\"--experimental --storage-driver=vfs\"" >> /etc/default/d
 ##  a /etc/pip.conf file that references an internal
 ##  mirror.
 ##
+##  In the case of no logging, or no PIP internal mirror,
+##  we install a pip.conf.log_runtime so that it can
+##  be optionally installed during day to day development.
+##
 COPY logging_extensions/docker/etc/pip.conf.log_runtime /etc/pip.conf
 {% elif PIP_INTERNAL_MIRROR == "yes" %}
 COPY logging_extensions/docker/etc/pip.conf /etc/pip.conf
+{% else %}
+COPY logging_extensions/docker/etc/pip.conf.log_runtime /etc/pip.conf.log_runtime
 {% endif %}

@@ -212,6 +212,14 @@ $(info "ENABLE_SFLOW"                    : "$(ENABLE_SFLOW)")
 $(info "ENABLE_NAT"                      : "$(ENABLE_NAT)")
 $(info )
 
+#  Strange construct to set logging enabled while in the Docker
+#  container.
+#
+ifeq ($(LOG_APP_EXTERNAL_REFS),yes)
+LOG_MODE=$(shell /sonic/slave_install_logs.sh)
+$(info "LOGS == ": "$(LOG_MODE)")
+endif
+
 ifeq ($(SONIC_USE_DOCKER_BUILDKIT),y)
 $(warning "Using SONIC_USE_DOCKER_BUILDKIT will produce larger installable SONiC image because of a docker bug (more details: https://github.com/moby/moby/issues/38903)")
 export DOCKER_BUILDKIT=1
