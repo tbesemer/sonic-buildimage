@@ -21,3 +21,7 @@ ifeq ($(NOJESSIE), 0)
 	make -f Makefile.work $@
 endif
 	BLDENV=stretch make -f Makefile.work $@
+
+.PHONY: help
+help:
+	@less README.make_help

@@ -1,0 +1,74 @@
+#==============================================
+#
+#  There are several means of buliding the baseline;
+#
+#   1.  With logging enabled.  This logs all wget, git and PIP
+#       operations in the build of <sonic-slave-stretch> and
+#       then the application <target/sonic-broadcom.bin>.
+#   2.  With logging not enabled in the base build of the
+#       Docker containers, but used during the building
+#       of <target/sonic-broadcom.bin>.
+#   3.  Default, such as released by Sonic, which uses
+#       <sonic-slave-stretch[-user]> tagged by the SHA
+#       of the associated Dockerfiles.
+#   4.  Producer/Consumer, where a fixed name set of
+#       Docker containers are used.
+#
+#  Addtionally, the pulls for PIP installs may reference
+#  an internal mirror.
+#
+#  The key environment variables passed during the various
+#  builds are:
+#
+#  ----
+#     Logging/mirror extentions:
+#
+#     Default logging behavior is off.  There are two
+#     modes of logging:
+#
+#      LOG_EXTERNAL_REFS: This builds logging into the Docker
+#                         container.
+#
+#      LOG_APP_EXTERNAL_REFS: This allows logging to be
+#                             enabled after when building
+#                             targets such as sonic-broadcom.bin
+#
+#  ----
+#     PIP internal mirror:
+#
+#     Default use of internal mirror is off.
+#
+#     To use entire mirror, please configure
+#     this file:
+#
+#       <sonic-slave-stretch/logging_extensions/docker/etc/pip.conf>
+#
+#     And set PIP_INTERNAL_MIRROR=yes
+#
+#  ----
+#     Producer/Consumer vs Development Model:
+#
+#     We have three modes of operation (SONIC_BUILD_OPERATION):
+#      1. Default (sonic_build_original):  No change, used
+#         for generating logs.
+#      2. Producer (sonic_build_producer):  Used to generate
+#         an image that is stored for long term reuse.
+#      3. Consumer (sonic_build_consumer):  Used to simply consume
+#         the the image built in Step 2.  This is the default setting.
+#
+#     Typically, the desired operation is set on the command line
+#     when invoking 'make'.
+#
+#  ----
+#     Example Builds:
+#
+#     BLDENV=stretch make PLATFORM=broadcom SONIC_BUILD_OPERATION=sonic_build_producer configure
+#     BLDENV=stretch make PLATFORM=broadcom SONIC_BUILD_OPERATION=sonic_build_producer LOG_EXTERNAL_REFS=yes configure
+#     BLDENV=stretch make SONIC_BUILD_OPERATION=sonic_build_consumer LOG_APP_EXTERNAL_REFS=yes target/sonic-broadcom.bin
+#
+#  ----
+#     For help in how to work with logs, please see:
+# 
+#     <~/logging_utils/README.md>
+#
+#==============================================

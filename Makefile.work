@@ -95,6 +95,13 @@ endif
 
 # Default use of internal mirror is off.
 #
+# To use entire mirror, please configure
+# this file:
+#
+#   <sonic-slave-stretch/logging_extensions/docker/etc/pip.conf>
+#
+# And set PIP_INTERNAL_MIRROR=yes
+#
 ifeq ($(PIP_INTERNAL_MIRROR),)
 PIP_INTERNAL_MIRROR=no
 endif
