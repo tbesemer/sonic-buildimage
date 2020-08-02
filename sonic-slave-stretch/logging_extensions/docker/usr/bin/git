@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#  Ensure quoted strings with white spaces are properly
+#  passed to git.
+#
+whitespace="[[:space:]]"
+C="git.bin "
+for i in "$@"
+do
+    if [[ $i =~ $whitespace ]]
+    then
+        i=\"$i\"
+    fi
+    C="$C $i"
+done
+
+#  There are two key loging operations:
+#
+#   1. During generation of Docker container.  We log everything
+#      in </sonic_logs> during creation.
+#   2. During builds from within the Docker container.  In this
+#      case, the CWD is mounted on /sonic in the container, so
+#      we log into that directory.
+#
+if [ ! -d /sonic ]
+then
+    GIT_LOG=/sonic_logs/db_git_log.txt
+else
+    GIT_LOG=/sonic/rt_git_log.txt
+fi
+
+#  Log it, and then invoke the operation.
+#
+echo "$C" >> $GIT_LOG
+bash -c "$C"
+

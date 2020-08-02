@@ -1,0 +1,3 @@
+[global]
+log=/sonic_logs/db_pip_install_log.txt
+

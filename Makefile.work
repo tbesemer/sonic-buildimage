@@ -73,12 +73,46 @@ ifeq ($(PLATFORM_ARCH),)
 	override PLATFORM_ARCH = $(CONFIGURED_ARCH)
 endif
 
+
+# Logging/mirror extentions.
+#
+# Default logging behavior is off.  There are two
+# modes of logging:
+#
+#  LOG_EXTERNAL_REFS: This builds logging into the Docker
+#                     container.
+#
+#  LOG_APP_EXTERNAL_REFS: This allows logging to be
+#                         enabled after when building
+#                         targets such as sonic-broadcom.bin
+#
+ifeq ($(LOG_EXTERNAL_REFS),)
+LOG_EXTERNAL_REFS=no
+endif
+
+ifeq ($(LOG_APP_EXTERNAL_REFS),)
+LOG_APP_EXTERNAL_REFS=no
+endif
+
+# Default use of internal mirror is off.
+#
+# To use entire mirror, please configure
+# this file:
+#
+#   <sonic-slave-stretch/logging_extensions/docker/etc/pip.conf>
+#
+# And set PIP_INTERNAL_MIRROR=yes
+#
+ifeq ($(PIP_INTERNAL_MIRROR),)
+PIP_INTERNAL_MIRROR=no
+endif
+
 ifeq ($(BLDENV), stretch)
 SLAVE_DIR = sonic-slave-stretch
 else
 SLAVE_DIR = sonic-slave-jessie
 endif
-SLAVE_BASE_TAG = $(shell CONFIGURED_ARCH=$(CONFIGURED_ARCH) j2 $(SLAVE_DIR)/Dockerfile.j2 > $(SLAVE_DIR)/Dockerfile && sha1sum $(SLAVE_DIR)/Dockerfile | awk '{print substr($$1,0,11);}')
+SLAVE_BASE_TAG = $(shell PIP_INTERNAL_MIRROR=$(PIP_INTERNAL_MIRROR) LOG_EXTERNAL_REFS=$(LOG_EXTERNAL_REFS) CONFIGURED_ARCH=$(CONFIGURED_ARCH) j2 $(SLAVE_DIR)/Dockerfile.j2 > $(SLAVE_DIR)/Dockerfile && sha1sum $(SLAVE_DIR)/Dockerfile | awk '{print substr($$1,0,11);}')
 SLAVE_TAG = $(shell cat $(SLAVE_DIR)/Dockerfile.user $(SLAVE_DIR)/Dockerfile | sha1sum | awk '{print substr($$1,0,11);}')
 SLAVE_BASE_IMAGE = $(SLAVE_DIR)
 SLAVE_IMAGE = $(SLAVE_BASE_IMAGE)-$(USER)
@@ -184,6 +218,7 @@ SONIC_BUILD_INSTRUCTION :=  make \
                            SONIC_ENABLE_SYSTEM_TELEMETRY=$(ENABLE_SYSTEM_TELEMETRY) \
                            SONIC_ENABLE_RESTAPI=$(ENABLE_RESTAPI) \
                            EXTRA_JESSIE_TARGETS=$(EXTRA_JESSIE_TARGETS) \
+                           LOG_APP_EXTERNAL_REFS=$(LOG_APP_EXTERNAL_REFS) \
                            $(SONIC_OVERRIDE_BUILD_VARS)
 
 .PHONY: sonic-slave-build sonic-slave-bash init reset
